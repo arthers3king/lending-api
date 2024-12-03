@@ -43,8 +43,8 @@ export class TransactionService {
         );
       }
 
-      lender.wallet -= amount; // คนให้ยืมลดเงินในกระเป๋า
-      borrower.wallet += amount; // คนยืมเพิ่มเงินในกระเป๋า
+      lender.wallet -= amount;
+      borrower.wallet += amount;
     } else if (type === TransactionTypeEnum.REPAY) {
       if (borrower.wallet < amount) {
         throw new ForbiddenException(
@@ -68,12 +68,35 @@ export class TransactionService {
       type,
     });
 
-    return this.transactionRepository.save(transaction);
+    const savedTransaction = await this.transactionRepository.save(transaction);
+
+    const filteredLender = {
+      id: lender.id,
+      email: lender.email,
+      name: lender.name,
+      wallet: lender.wallet,
+    };
+
+    const filteredBorrower = {
+      id: borrower.id,
+      email: borrower.email,
+      name: borrower.name,
+      wallet: borrower.wallet,
+    };
+
+    return {
+      id: savedTransaction.id,
+      amount: savedTransaction.amount,
+      type: savedTransaction.type,
+      lender: filteredLender,
+      borrower: filteredBorrower,
+      createdAt: savedTransaction.createdAt,
+    };
   }
 
   async getSummary(userId: number) {
     const result = await this.transactionRepository
-      .createQueryBuilder('txn') // เปลี่ยน alias จาก 'transaction' เป็น 'txn'
+      .createQueryBuilder('txn')
       .select(
         'SUM(CASE WHEN txn.type = :borrow THEN txn.amount ELSE - txn.amount END)',
         'balance',
@@ -89,6 +112,7 @@ export class TransactionService {
       balance: result?.balance || 0,
     };
   }
+
   async getTransactions(userId: number) {
     const query = this.transactionRepository
       .createQueryBuilder('txn')

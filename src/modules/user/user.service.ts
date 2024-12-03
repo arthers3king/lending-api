@@ -51,7 +51,6 @@ export class UserService {
       throw new NotFoundException(`User with ID ${userId} not found.`);
     }
 
-    // ยอดหนี้ที่ผู้ใช้นี้ติดหนี้คนอื่น
     const debtToOthers = await this.userRepository
       .createQueryBuilder('transaction')
       .select('SUM(transaction.amount)', 'total')
@@ -61,7 +60,6 @@ export class UserService {
       })
       .getRawOne();
 
-    // ยอดหนี้ที่คนอื่นติดหนี้ผู้ใช้นี้
     const debtFromOthers = await this.userRepository
       .createQueryBuilder('transaction')
       .select('SUM(transaction.amount)', 'total')
@@ -79,8 +77,8 @@ export class UserService {
         wallet: user.wallet,
       },
       debts: {
-        debtToOthers: debtToOthers.total || 0, // หนี้ที่เราต้องคืนคนอื่น
-        debtFromOthers: debtFromOthers.total || 0, // หนี้ที่คนอื่นติดเรา
+        debtToOthers: debtToOthers.total || 0,
+        debtFromOthers: debtFromOthers.total || 0,
       },
     };
   }
